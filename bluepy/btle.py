@@ -342,7 +342,7 @@ class BluepyHelper:
                 fds = self._poller.poll(timeout*1000)
                 if len(fds) == 0:
                     DBG("Select timeout")
-                    return None
+                    raise TimeoutError()
 
             rv = self._helper.stdout.readline()
             DBG("Got:", repr(rv))
