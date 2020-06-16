@@ -342,7 +342,7 @@ class BluepyHelper:
                 fds = self._poller.poll(timeout*1000)
                 if len(fds) == 0:
                     DBG("Select timeout")
-                    raise TimeoutError()
+                    return None
 
             rv = self._helper.stdout.readline()
             DBG("Got:", repr(rv))
@@ -531,6 +531,8 @@ class Peripheral(BluepyHelper):
     def readCharacteristic(self, handle, timeout=None):
         self._writeCmd("rd %X\n" % handle)
         resp = self._getResp('rd', timeout)
+        if resp is None:
+            raise BTLEDisconnectError("Timed out while trying to read Characteristic")
         return resp['d'][0]
 
     def _readCharacteristicByUUID(self, uuid, startHnd, endHnd):
@@ -543,7 +545,10 @@ class Peripheral(BluepyHelper):
         # but with response, it will be sent as a queued write
         cmd = "wrr" if withResponse else "wr"
         self._writeCmd("%s %X %s\n" % (cmd, handle, binascii.b2a_hex(val).decode('utf-8')))
-        return self._getResp('wr', timeout)
+        resp = self._getResp('wr', timeout)
+        if resp is None:
+            raise BTLEDisconnectError("Timed out while trying to write Characteristic")
+        return resp
 
     def setSecurityLevel(self, level):
         self._writeCmd("secu %s\n" % level)
